@@ -6,6 +6,8 @@ const logger = new Logger();
 export class Engine {
   private boardInPlay: DefaultBoard
   private piecesInPlay: DefaultPieces
+  private prevChosen: [ string, number ][] | []
+
 
   constructor() {
     this.boardInPlay = {
@@ -17,6 +19,8 @@ export class Engine {
       smallShips: [],
       largeShips: []
     };
+
+    this.prevChosen = [];
   }
 
   generateNewBoard = (selection: number, sizeOptions: (string)[]) => {

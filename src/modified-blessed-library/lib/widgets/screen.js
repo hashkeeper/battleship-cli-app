@@ -26,10 +26,6 @@ var Element = require('./element');
 var Box = require('./box');
 const { table } = require('console');
 
-var { Logger } = require('../../../logger');
-
-var logger = new Logger();
-
 /**
  * Screen
  */

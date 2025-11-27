@@ -20,10 +20,6 @@ var helpers = require('../helpers');
 var Node = require('./node');
 const { table } = require('console');
 
-var { Logger } = require('../../../logger');
-
-var logger = new Logger();
-
 /**
  * Element
  */

@@ -13,10 +13,6 @@ var Box = require('./box');
 
 var unicode = require('../unicode');
 
-var { Logger } = require('../../../logger');
-
-var logger = new Logger();
-
 /**
  * Table
  */

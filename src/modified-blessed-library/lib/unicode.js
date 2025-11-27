@@ -105,10 +105,6 @@
 
 var stringFromCharCode = String.fromCharCode;
 var floor = Math.floor;
-
-var { Logger } = require('../../logger');
-
-var logger = new Logger();
 /**
  * Wide, Surrogates, and Combining
  */

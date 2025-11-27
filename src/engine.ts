@@ -1,7 +1,4 @@
-import { Logger }  from './logger.ts';
 import type { DefaultBoard, DefaultPieces } from "../types/types.ts";
-
-const logger = new Logger();
 
 export class Engine {
   private currentBoard: DefaultBoard

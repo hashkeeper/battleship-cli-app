@@ -1,11 +1,8 @@
 import blessed from './modified-blessed-library/index.js';
 import { Engine } from './engine.ts';
-import { Logger } from './logger.ts';
 import fs from 'fs/promises';
 import path from 'path';
 import type { CurrentBoard, DefaultPieces } from "../types/types.ts";
-
-const logger = new Logger();
 
 export class Gui {
   private screen!: blessed.Widgets.Screen

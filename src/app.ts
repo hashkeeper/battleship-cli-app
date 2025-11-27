@@ -8,8 +8,4 @@ export class App {
   constructor() {
     this.gui = new Gui();
   }
-
-  initialize() {
-    fs.writeFileSync('./debug.log', '');
-  }
 }

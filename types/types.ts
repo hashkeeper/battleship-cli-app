@@ -1,6 +1,6 @@
 export type DefaultBoard = {
-    answer: ( "-" | "❗" | "🟠" | "🔵" | string)[][],
-    inPlay: ( "-" | "❗" | "🟠" | "🔵" | string)[][]
+    answer: ( "❗" | "🟠" | "🔵" | string )[][],
+    inPlay: ( "-" | "❗" | "🟠" | "🔵" | string )[][]
 }
 
 export type DefaultPieces = {
@@ -16,3 +16,5 @@ export type DefaultPieces = {
       coordinates: [[number, number], [number, number], [number, number]]
     }[]
 }
+
+export type CurrentBoard = DefaultBoard['inPlay'];

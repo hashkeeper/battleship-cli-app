@@ -4,13 +4,13 @@ import type { DefaultBoard, DefaultPieces } from "../types/types.ts";
 const logger = new Logger();
 
 export class Engine {
-  private boardInPlay: DefaultBoard
+  private currentBoard: DefaultBoard
   private piecesInPlay: DefaultPieces
-  private prevChosen: [ string, number ][] | []
+  private prevChosen: [ number, number ][] | []
 
 
   constructor() {
-    this.boardInPlay = {
+    this.currentBoard = {
       answer: [[]],
       inPlay: [[]]
     };
@@ -23,26 +23,25 @@ export class Engine {
     this.prevChosen = [];
   }
 
-  generateNewBoard = (selection: number, sizeOptions: (string)[]) => {
+  generateNewBoard = (selection: number, sizeOptions: (string)[]): [ DefaultBoard['inPlay'], DefaultPieces] => {
     for(let i = 0; i < selection + 1; i++) {
       if(i === 0) { 
-        const horzLabels: (string)[] = [ " ", "1", "2", "3", "4", "5", "6" ].slice(0, selection + 1);
-        this.boardInPlay.answer[i] = horzLabels;
-        this.boardInPlay.inPlay[i] = horzLabels;
+        const horzLabels: (string)[] = [ " ", " 1 ", " 2 ", " 3 ", " 4 ", " 5 ", " 6 " ].slice(0, selection + 1);
+        this.currentBoard.answer[i] = horzLabels;
+        this.currentBoard.inPlay[i] = horzLabels;
         continue;
       } else {
-        this.boardInPlay.answer[i] = [];
-        this.boardInPlay.inPlay[i] = [];
+        this.currentBoard.answer[i] = [];
+        this.currentBoard.inPlay[i] = [];
       }
       for(let j = 0; j < selection + 1; j++) {
         if (j === 0 && i !== 0) {
           const vertLabels: (string)[] = [ " A ", " B ", " C ", " D ", " E ", " F " ].slice(0, selection + 1);
-          this.boardInPlay.answer[i]![j] = vertLabels[i - 1]!;
-          this.boardInPlay.inPlay[i]![j] = vertLabels[i - 1]!;
+          this.currentBoard.answer[i]![j] = vertLabels[i - 1]!;
+          this.currentBoard.inPlay[i]![j] = vertLabels[i - 1]!;
         } else {
-          this.boardInPlay.answer[i]![j] = "❗";
-          this.boardInPlay.inPlay[i]![j] = " - ";
-          //❗
+          this.currentBoard.answer[i]![j] = "❗";
+          this.currentBoard.inPlay[i]![j] = " - ";
         }
       }
     }
@@ -137,69 +136,107 @@ export class Engine {
     Object.keys(this.piecesInPlay).forEach((cur: string): void => {
       this.piecesInPlay[cur].forEach((ship: { pegs: string, coordinates: [number, number][] }): void => {
         ship.coordinates.forEach((cord: [number, number]): void => {
-          if (this.boardInPlay.answer[cord[0]! + 1] && this.boardInPlay.answer[cord[0]! + 1]![cord[1]! + 1] !== undefined) {
-            this.boardInPlay.answer[cord[0]! + 1]![cord[1]! + 1] = ship.pegs[0]!;
+          if (this.currentBoard.answer[cord[0]! + 1] && this.currentBoard.answer[cord[0]! + 1]![cord[1]! + 1] !== undefined) {
+            this.currentBoard.answer[cord[0]! + 1]![cord[1]! + 1] = ship.pegs[0]!;
           }
         });
       });
     });
 
-    // logger.log(this.boardInPlay.answer);
-
-    return [ this.boardInPlay, this.piecesInPlay ];
+    return [ this.currentBoard.inPlay, this.piecesInPlay ];
   };
 
-  parseSubmition = (userInput: string): [ DefaultBoard, string, number ] => {
-    const inputArr = userInput.split(/[\s|,]/g).filter(cur => cur.length > 0);
-    let logCont: string = '';
+  parseSubmition = (userInput: string): [ DefaultBoard['answer'], string, number, boolean ] => {
+    let inputArr: string[] | string[][] = userInput.split(/[\s|,]/g).filter(cur => cur.length > 0).map(cur => cur.split(""));
+    let logCont: string = ``;
     let turnCount: number = 0;
 
-    inputArr.forEach(subm => {
-      let submitioN: [] | [number, string] = [];
-      subm.split("").forEach(curCoord => {
-
-        const numCheck = Number(curCoord);
-        if(!isNaN(numCheck) && !submitioN[0]) {
+    for(let i = 0; i < inputArr.length; i++) {
+      let submitioN: ( string | number | null )[] = [ null, null ];
+      for(let j = 0; j < inputArr[i]!.length; j++){
+        const numCheck = Number(inputArr[i]![j]!);
+        if(!isNaN(numCheck) && submitioN[0] === null) {
           submitioN[0] = (numCheck);
-        } else if (curCoord !== "" && !submitioN[1]) {
-          submitioN[1] = (curCoord);
+        } else if (inputArr[i]![j]! !== "" && submitioN[1] === null) {
+          submitioN[1] = (inputArr[i]![j]!);
         }
 
         if(submitioN.length >= 2 && typeof submitioN[0] === 'number' && typeof submitioN[1] === 'string') {
-          logCont = logCont + this.boardCheck(submitioN[0], submitioN[1]) + `\n`;
-          submitioN = [];
-          ++turnCount;
+          const [ validTurnBool, gameOverBool, turnLog ] = this.boardCheck(submitioN[0], submitioN[1]);
+          logCont = logCont + turnLog;
+          if(validTurnBool) ++turnCount;
+          submitioN = [ null, null ];
+          if(gameOverBool) return [ this.currentBoard.inPlay, logCont, turnCount, gameOverBool ];
         }
-      })
-    });
+      }
+    }
 
-    return [ this.boardInPlay, logCont, turnCount ];
+    return [ this.currentBoard.inPlay, logCont, turnCount, false ];
   }
 
-  boardCheck = (xNum: number, yLett: string): string => {
-    const yCoordArr = ['a', 'b', 'c', 'd', 'e', 'f'].splice(0, this.boardInPlay.answer.length - 1);
+  boardCheck = (xNum: number, yLett: string): [ boolean, boolean, string] => {
+    const yCoordArr = ['a', 'b', 'c', 'd', 'e', 'f'].splice(0, this.currentBoard.answer.length - 1);
     yLett = yLett.toLowerCase();
     const yNum: number = yCoordArr.indexOf(yLett) + 1;
 
-    if(yNum && yNum <= this.boardInPlay.answer.length && xNum <= this.boardInPlay.answer.length) {
-      this.boardInPlay.inPlay[yNum]![xNum]! = this.boardInPlay.answer[yNum]![xNum]!
-      this.pieceHit(xNum, yNum);
-      return `xCoord: ${xNum}, yCoord: ${yNum} is a valid entry!`;
+    if(this.prevChosen.some(cur => String(cur) === String([ xNum, yNum ]))) return [ false, false, `${yLett}${xNum} is already in play!\nPlease try other coordinates.\n` ];
+
+    if(yNum && yNum <= this.currentBoard.answer.length - 1 && xNum <= this.currentBoard.answer.length - 1 && xNum > 0) {
+      this.prevChosen[this.prevChosen.length] = [xNum, yNum];
+      const currChoice: string = this.currentBoard.answer[yNum]![xNum]!;
+      this.currentBoard.inPlay[yNum]![xNum]! = currChoice;
+      if(currChoice !== "❗"){
+        const [ gameOverBool, shipSinkLog ] = this.pieceHit(xNum, yNum, currChoice);
+        return [ true, gameOverBool, `${yLett}${xNum} is a hit!\n${shipSinkLog}` ];
+      } else {
+        return [ true, false, `${yLett}${xNum} is a miss! Sorry, try again...\n` ];
+      }
     } else {
-      return `xCoord: ${xNum}, yCoord: ${yNum} is an invalid entry.`;
+      return [ false, false, `${yLett}${xNum} is not within the bounds of the board.\nPlease try other coordinates.\n` ];
     }
   }
 
-  pieceHit = (xCoord: number, yCoord: number) => {
-    const curCoord = [ xCoord, yCoord ];
-    this.piecesInPlay.smallShips.forEach(ship => {
-      ship.coordinates.forEach(coord => {
-        if(coord === curCoord) return
-      });
-    });
+  pieceHit = (xCoord: number, yCoord: number, choice: string): [ boolean, string ] => {
+    // Converting coordinates to piecesInPlay formatting, where y coordinates are listed first, also uses a whole number counting system
+    const curCoord = [ yCoord - 1, xCoord - 1 ];
+    const curShip = (choice === "🔵")? "smallShips" : "largeShips";
+    let logMessage = ``;
+
+    for(let i = 0; i < this.piecesInPlay[curShip].length; i++) {
+      for(let j = 0; j < this.piecesInPlay![curShip]![i]!.coordinates.length; j++) {
+        if(String(curCoord) === String(this.piecesInPlay![curShip]![i]!.coordinates[j])) {
+          this.piecesInPlay![curShip]![i]!.pegs[j] = "❗";
+          const [ gameOverBool, logAddition ] = this.piecesHealthCheck(curShip, i);
+          logMessage = logMessage + logAddition;
+          return [ gameOverBool, logMessage ];
+        }
+      }
+    }
+
+    return [ false, `` ];
   }
 
-  piecesCheck = (xCoord: number, yCoord: number) => {
+  piecesHealthCheck = (ship: string, shipInd: number): [ boolean, string ] => {
+    const allPegsArr: ("🟠"|"🔵"|"❗")[] = [ 
+      ...this.piecesInPlay.smallShips.reduce((acc: ("🔵"|"❗")[], cur: DefaultPieces['smallShips'][number]) => {
+        acc = [ ...acc, ...cur.pegs ];
+        return acc;
+      }, []),
+      ...this.piecesInPlay.largeShips.reduce((acc: ("🟠"|"❗")[], cur: DefaultPieces['largeShips'][number]) => {
+        acc = [ ...acc, ...cur.pegs ];
+        return acc;
+      }, [])
+    ];
+    let logMessage = ``;
+    let gameOverBool = false;
+    let shipName = (ship === "smallShips")? "Destroyer" : "Cruiser";
 
+    if(!this.piecesInPlay![ship]![shipInd]!.pegs.find((cur: "🟠"|"🔵"|"❗") => cur === "🟠" || cur === "🔵")) logMessage = logMessage + `You sunk my ${shipName}!\n`;
+    if(!allPegsArr.find((cur: "🟠"|"🔵"|"❗") => cur === "🟠" || cur === "🔵")) {
+      logMessage = logMessage + `All battleships destroyed! You Win!\n`
+      gameOverBool = true;
+    }
+
+    return [ gameOverBool, logMessage ];
   }
 }
